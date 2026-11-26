@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ESP8266 Control Panel</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #121212;
+      color: #ffffff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      max-width: 400px;
+      width: 100%;
+      margin-top: 20px;
+    }
+    button {
+      padding: 18px;
+      font-size: 16px;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      background: #2a2a2a;
+      color: white;
+      cursor: pointer;
+      transition: 0.2s;
+    }
+    button:hover { background: #3d3d3d; }
+    button.active { background: #2563eb; }
+    .badge {
+      padding: 6px 14px;
+      background: #1e293b;
+      border-radius: 20px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Device Dashboard</h2>
+  <div class="badge">Active State: <span id="currentState">Loading...</span></div>
+
+  <div class="grid" id="buttonGrid"></div>
+  <p id="statusMsg" style="color: #94a3b8; margin-top: 20px;">Ready</p>
+
+  <script>
+    // 1. Point directly to your Cloudflare Worker URL
+    const WORKER_URL = "https://workers.dev";
+    const API_KEY = "simplepass";
+    const STATES = ["OFF", "L1", "L2", "L3", "L4", "L5", "L6", "F1", "F2"];
+
+    const grid = document.getElementById("buttonGrid");
+    const msg = document.getElementById("statusMsg");
+    const currentLabel = document.getElementById("currentState");
+
+    // Generate buttons dynamically
+    STATES.forEach((state) => {
+      const btn = document.createElement("button");
+      btn.innerText = state;
+      btn.id = "btn-" + state;
+      btn.onclick = () => sendCommand(state);
+      grid.appendChild(btn);
+    });
+
+    // Highlight active button
+    function updateUI(activeState) {
+      currentLabel.innerText = activeState;
+      document.querySelectorAll("button").forEach((b) => b.classList.remove("active"));
+      const activeBtn = document.getElementById("btn-" + activeState);
+      if (activeBtn) activeBtn.classList.add("active");
+    }
+
+    // Send new state to Worker
+    async function sendCommand(val) {
+      msg.innerText = `Sending ${val}...`;
+      updateUI(val); // Instant visual feedback
+      try {
+        const res = await fetch(`${WORKER_URL}/set?key=${API_KEY}&state=${encodeURIComponent(val)}`);
+        msg.innerText = res.ok ? `Saved: ${val}` : `Error: ${res.status}`;
+      } catch (err) {
+        msg.innerText = "Network error";
+      }
+    }
+
+    // Sync initial state when webpage opens
+    async function loadInitialState() {
+      try {
+        const res = await fetch(`${WORKER_URL}/status?key=${API_KEY}`);
+        if (res.ok) {
+          const state = await res.text();
+          updateUI(state.trim());
+        }
+      } catch (err) {
+        currentLabel.innerText = "Offline";
+      }
+    }
+
+    loadInitialState();
+  </script>
+</body>
+</html>
