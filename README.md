@@ -1,5 +1,5 @@
 # ESP_Car : IoT Vehicle Controller
-*This is a low effot readme made with duck.ai beware of errors as i dont really care about this readme
+*This is a low effot readme made with duck.ai beware of errors as i dont really care about this readme as it is only for the sake of one single index.html's existance.
 
 A simple web interface for sending vehicle-control states to an ESP32 through a Cloudflare Worker and Cloudflare KV storage.
 
